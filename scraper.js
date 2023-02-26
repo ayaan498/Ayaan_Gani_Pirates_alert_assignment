@@ -131,17 +131,30 @@ console.log(res);
 function writeToExcel(data) {
   // Create a new workbook
   const workbook = XLSX.utils.book_new();
-  
+
   // Convert the data to an array of arrays
   const dataArray = data.map(obj => Object.values(obj));
-  
+
   // Add a new worksheet to the workbook
   const worksheet = XLSX.utils.aoa_to_sheet(dataArray);
+
+  // Add a title row for each column
+  const titleRow = ['No','BookTitle','ISBN','Found','URL','Price','Author','Publisher','InStock'];
+  XLSX.utils.sheet_add_aoa(worksheet, [titleRow], { origin: 'A1' });
+
+  // Append the worksheet to the workbook
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
-  
+
+  // Specify the start position as A2
+  const start = { r: 1, c: 0 };
+
+  // Add the data to the worksheet from A2 onwards
+  XLSX.utils.sheet_add_aoa(worksheet, dataArray, { origin: start });
+
   // Write the workbook to a file
   XLSX.writeFile(workbook, 'results.xlsx');
 }
+
 
 // Call the searchBookPrice function and pass the writeToExcel function as a callback
 searchBookPrice().then(() => {
