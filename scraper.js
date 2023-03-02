@@ -182,7 +182,22 @@ await browser.close();
 
 console.log('All the sessions-Data are: ')
 console.log(profileData)
-
+// Each session in the profileData is somewhat like this: 
+// {
+//   sessionID: 1,
+//   cookies: {
+//     name: 'session1',
+//     value: 'book1',
+//     domain: 'snapdeal.com',
+//     path: '/',
+//     expires: 1677798278207,
+//     httpOnly: false,
+//     secure: false,
+//     sameSite: 'Lax'
+//   },
+//   URL: 'https://www.snapdeal.com/product/the-subtle-art-of-not/673256894166#bcrumbSearch:9780062641540%20The%20Subtle%20Art%20of%20No
+// t%20Giving%20a%20F'
+// }
 }
 
 function writeToExcel(data) {
