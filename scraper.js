@@ -2,7 +2,7 @@ const puppeteer = require('puppeteer');
 const XLSX = require('xlsx');
 const stringSimilarity = require('string-similarity')
 const res = [] // to store all the books extracted
-const sessionsData = []; // to store each session information
+const profileData = []; // to store each session information
 
 async function searchBookPrice() {
 
@@ -97,7 +97,7 @@ try{
   },book.ISBN,i,book.BookTitle);
 
   const addSession = (url) => {
-    sessionsData.push({
+    profileData.push({
       sessionID: i,
       cookies : cookies[0],
       URL: url,
@@ -163,7 +163,7 @@ try{
         Found: 'No',URL:'',Price:'',Author:'',Publisher:'',InStock:''
     };
       res.push(notFoundBook);
-      sessionsData.push({
+      profileData.push({
         sessionID: i,
         cookies : cookies[0],
         URL: 'Not found',
@@ -181,7 +181,7 @@ try{
 await browser.close();
 
 console.log('All the sessions-Data are: ')
-console.log(sessionsData)
+console.log(profileData)
 
 }
 
