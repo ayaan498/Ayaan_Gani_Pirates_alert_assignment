@@ -2,6 +2,7 @@ const puppeteer = require('puppeteer');
 const XLSX = require('xlsx');
 const stringSimilarity = require('string-similarity')
 const res = []
+
 async function searchBookPrice() {
 
   const workbook = XLSX.readFile('books.xlsx');
@@ -15,8 +16,12 @@ async function searchBookPrice() {
   i++;
   const browser = await puppeteer.launch({
     executablePath: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-    headless: false}); 
-  
+    headless: false,
+    args: [
+      '--disable-cache',
+      '--blink-settings=imagesEnabled=false'
+    ]}); 
+
   browserSessions.push(browser);
   const page = await browser.newPage();
 
@@ -34,9 +39,36 @@ async function searchBookPrice() {
     }
   });
 
+  // Set user-profile for each session
+  const cookies = [
+    {
+      name: 'user-profile',
+      value: `book${i}`,
+      domain: 'snapdeal.com',
+      path: '/',
+      expires: -1,
+      httpOnly: false,
+      secure: false,
+      sameSite: 'Lax',
+    },
+  ];
+
+  await page.setCookie(...cookies);
+  console.log(`The cookie for page${i}: `)
+  console.log(cookies);
+
+// Create a user-profile for the page
+await page.evaluateOnNewDocument(() => {
+  localStorage.setItem('user_profile', JSON.stringify({
+    name: 'John Doe',
+    email: 'johndoe@example.com',
+    age: 30
+  }));
+});
+
   // Navigate to snapdeal.com and search for the book by ISBN and title
   await page.goto(`https://www.snapdeal.com/search?keyword=${book.ISBN}+${book.BookTitle}`);
-  
+
 
 try{
   // Wait for the search results to load
@@ -53,7 +85,7 @@ try{
 
       // Extract the book title from the title element
       const rawTitle = titleElement ? titleElement.textContent.trim() : '';
-      
+
       // Remove the text enclosed in parentheses, after a colon : or a hyphen -
       const cleanedTitle = rawTitle.replace(/ *\([^)]*\) *| *-[^-]*$/g, '').toLowerCase();
 
@@ -90,23 +122,23 @@ try{
   // Remove text inside parentheses and after colon or dash
   const excelTitleClean = excelTitle.replace(/\(.*?\)|:.*|-.*|\W/g, '');
   const searchTitleClean = searchTitle.replace(/\(.*?\)|:.*|-.*|\W/g, '');
-  console.log(excelTitleClean)
-  console.log(searchTitleClean)
+
   // Calculate the string similarity
   const similarity = stringSimilarity.compareTwoStrings(excelTitleClean, searchTitleClean);
-  
-  console.log(similarity);
+
   if (similarity >= 0.9) 
   {
     res.push(cheapestBook);
+    console.log()
     console.log(cheapestBook);
   } else 
   {
-    
+
     const cheapestBook = { No:i,BookTitle: book.BookTitle, ISBN: book.ISBN, 
         Found: 'No',URL:'',Price:'',Author:'',Publisher:'',InStock:''
     };
     res.push(cheapestBook);
+    console.log()
     console.log(cheapestBook);
   }
 
@@ -118,6 +150,7 @@ try{
         Found: 'No',URL:'',Price:'',Author:'',Publisher:'',InStock:''
     };
       res.push(notFoundBook);
+      console.log()
       console.log(notFoundBook);
       // Close the browser
       await browser.close();
