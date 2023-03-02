@@ -10,9 +10,14 @@ async function searchBookPrice() {
   console.log(Books);
   console.log('New One: ')
   let i =0;
+  const browserSessions = [];
   for (const book of Books) {
   i++;
-  const browser = await puppeteer.launch();
+  const browser = await puppeteer.launch({
+    executablePath: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+    headless: false}); 
+  
+  browserSessions.push(browser);
   const page = await browser.newPage();
 
   // Intercept and block unnecessary requests
@@ -41,7 +46,7 @@ try{
     return listings.map(listing => {
       const titleElement = listing.querySelector('.product-title');
       const priceElement = listing.querySelector('.product-price');
-      const authorElement = listing.querySelector('.product-author');
+      const authorElement = listing.querySelector('.product-author-name');
       const publisherElement = listing.querySelector('.product-publisher');
       const inStockElement = listing.querySelector('.product-out-of-stock');
       const urlElement = listing.querySelector('.product-desc-rating a');
@@ -85,13 +90,12 @@ try{
   // Remove text inside parentheses and after colon or dash
   const excelTitleClean = excelTitle.replace(/\(.*?\)|:.*|-.*|\W/g, '');
   const searchTitleClean = searchTitle.replace(/\(.*?\)|:.*|-.*|\W/g, '');
-
+  console.log(excelTitleClean)
+  console.log(searchTitleClean)
   // Calculate the string similarity
   const similarity = stringSimilarity.compareTwoStrings(excelTitleClean, searchTitleClean);
-  // res.push(cheapestBook);
-  // console.log(cheapestBook)
-  // console.log(cheapestBook)
-  // console.log(similarity)
+  
+  console.log(similarity);
   if (similarity >= 0.9) 
   {
     res.push(cheapestBook);
@@ -106,10 +110,6 @@ try{
     console.log(cheapestBook);
   }
 
-  // Print the details of the book with the minimum price
-  // console.log(cheapestBook);
-  // res.push(cheapestBook);
-  // Close the browser
   await browser.close();
 
   }catch{
@@ -124,7 +124,7 @@ try{
   }
 }
 console.log('Final: ')
-console.log(res);
+console.log(browserSessions);
 
 }
 
@@ -135,7 +135,7 @@ function writeToExcel(data) {
   // Convert the data to an array of arrays
   const dataArray = data.map(obj => Object.values(obj));
 
-  // Add a new worksheet to the workbook
+  // Adding a new worksheet to the workbook
   const worksheet = XLSX.utils.aoa_to_sheet(dataArray);
 
   // Add a title row for each column
