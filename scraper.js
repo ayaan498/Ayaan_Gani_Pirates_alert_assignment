@@ -1,7 +1,8 @@
 const puppeteer = require('puppeteer');
 const XLSX = require('xlsx');
 const stringSimilarity = require('string-similarity')
-const res = []
+const res = [] // to store all the books extracted
+const sessionsData = []; // to store each session information
 
 async function searchBookPrice() {
 
@@ -12,15 +13,18 @@ async function searchBookPrice() {
   console.log('New One: ')
   let i =0;
   const browserSessions = [];
-  for (const book of Books) {
-  i++;
   const browser = await puppeteer.launch({
     executablePath: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
     headless: false,
     args: [
       '--disable-cache',
       '--blink-settings=imagesEnabled=false'
-    ]}); 
+    ],
+  }); 
+
+
+  for (const book of Books) {
+  i++;
 
   browserSessions.push(browser);
   const page = await browser.newPage();
@@ -38,15 +42,15 @@ async function searchBookPrice() {
       request.continue();
     }
   });
-
-  // Set user-profile for each session
+  
+  // Set cookie for each session
   const cookies = [
     {
-      name: 'user-profile',
+      name: `session${i}`,
       value: `book${i}`,
       domain: 'snapdeal.com',
       path: '/',
-      expires: -1,
+      expires: Date.now() + 1000 * 60 * 60,
       httpOnly: false,
       secure: false,
       sameSite: 'Lax',
@@ -54,17 +58,6 @@ async function searchBookPrice() {
   ];
 
   await page.setCookie(...cookies);
-  console.log(`The cookie for page${i}: `)
-  console.log(cookies);
-
-// Create a user-profile for the page
-await page.evaluateOnNewDocument(() => {
-  localStorage.setItem('user_profile', JSON.stringify({
-    name: 'John Doe',
-    email: 'johndoe@example.com',
-    age: 30
-  }));
-});
 
   // Navigate to snapdeal.com and search for the book by ISBN and title
   await page.goto(`https://www.snapdeal.com/search?keyword=${book.ISBN}+${book.BookTitle}`);
@@ -103,17 +96,31 @@ try{
     });
   },book.ISBN,i,book.BookTitle);
 
+  const addSession = (url) => {
+    sessionsData.push({
+      sessionID: i,
+      cookies : cookies[0],
+      URL: url,
+    })
+  }
+
+
   // Find the book with the minimum price
   const minPrice = Math.min(...books.map(book => book.Price));
   let cheapestBook = books.find(book => book.Price === minPrice);
+
 
   if (!cheapestBook) {
     const cheapestBook = { No:i,BookTitle: book.BookTitle, ISBN: book.ISBN, 
       Found: 'No',URL:'',Price:'',Author:'',Publisher:'',InStock:''
   };
+
     res.push(cheapestBook);
+
+    addSession('Not found');
+    console.log(`The extracted book for session ${i} is: `)
     console.log('Not found');
-    await browser.close();
+    // await browser.close();
     continue;
   }
     const excelTitle = book.BookTitle.toLowerCase();
@@ -129,7 +136,10 @@ try{
   if (similarity >= 0.9) 
   {
     res.push(cheapestBook);
-    console.log()
+    
+    addSession(cheapestBook.URL);
+
+    console.log(`The extracted book for session ${i} is: `)
     console.log(cheapestBook);
   } else 
   {
@@ -138,11 +148,14 @@ try{
         Found: 'No',URL:'',Price:'',Author:'',Publisher:'',InStock:''
     };
     res.push(cheapestBook);
-    console.log()
+
+    addSession('Not found');
+
+    console.log(`The extracted book for session ${i} is: `)
     console.log(cheapestBook);
   }
 
-  await browser.close();
+  // await browser.close();
 
   }catch{
       // If the book is not found
@@ -150,14 +163,25 @@ try{
         Found: 'No',URL:'',Price:'',Author:'',Publisher:'',InStock:''
     };
       res.push(notFoundBook);
-      console.log()
+      sessionsData.push({
+        sessionID: i,
+        cookies : cookies[0],
+        URL: 'Not found',
+      })
+      
+
+      console.log(`The extracted book for session ${i} is: `)
       console.log(notFoundBook);
       // Close the browser
-      await browser.close();
+      // await browser.close();
   }
+  
 }
-console.log('Final: ')
-console.log(browserSessions);
+
+await browser.close();
+
+console.log('All the sessions-Data are: ')
+console.log(sessionsData)
 
 }
 
